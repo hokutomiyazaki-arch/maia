@@ -1,0 +1,26 @@
+{
+  "name": "MAIA 内受容覚アセスメント",
+  "short_name": "MAIA",
+  "description": "Multidimensional Assessment of Interoceptive Awareness - 内受容覚の多次元的評価",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
+  "icons": [
+    {
+      "src": "FNT512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "FNT512-transparent.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["health", "medical", "education"],
+  "lang": "ja"
+}

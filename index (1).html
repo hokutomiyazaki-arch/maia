@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MAIA評価">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07111f">
+<link rel="manifest" href="manifest.json">
+<title>MAIA 内受容覚アセスメント</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;overflow:hidden;touch-action:none;}
+body{
+  height:100%;width:100%;overflow:hidden;
+  background:#07111f;
+  font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN','Rounded Mplus 1c','Noto Sans JP',sans-serif;
+  font-weight:700;
+  color:#f0f4ff;
+  position:fixed;top:0;left:0;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* スプラッシュ */
+#splash{
+  position:fixed;inset:0;background:#07111f;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:14px;transition:opacity .7s ease;
+}
+#splash.fade-out{opacity:0;pointer-events:none;}
+#splash img{width:96px;height:96px;object-fit:contain;}
+#splash .sp-brand{font-size:11px;letter-spacing:.2em;color:#7ec8ff;font-weight:800;white-space:nowrap;}
+#splash .sp-title{font-size:22px;font-weight:800;color:#ffffff;letter-spacing:.05em;text-align:center;line-height:1.35;}
+#splash .sp-copy{font-size:11px;color:#6a8aaa;letter-spacing:.08em;position:absolute;bottom:24px;padding-bottom:env(safe-area-inset-bottom);text-align:center;}
+
+/* アプリ本体 */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;transition:opacity .5s ease;overflow:hidden;}
+#app.visible{opacity:1;}
+
+/* ヘッダー */
+.app-header{
+  flex-shrink:0;background:#0b1a2e;border-bottom:1px solid #162e4e;
+  padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));
+  display:flex;align-items:center;justify-content:space-between;
+}
+.header-left{display:flex;align-items:center;gap:10px;}
+.header-logo{width:34px;height:34px;object-fit:contain;}
+.header-titles h1{font-size:14px;font-weight:800;color:#ffffff;line-height:1.2;}
+.header-titles span{font-size:10px;color:#7ec8ff;letter-spacing:.12em;display:block;}
+.menu-btn{background:none;border:1.5px solid #162e4e;border-radius:8px;padding:7px 8px;cursor:pointer;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.menu-btn span{display:block;width:19px;height:2px;background:#4a9eff;border-radius:2px;}
+
+/* サイドメニュー */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;opacity:0;pointer-events:none;transition:opacity .3s ease;touch-action:auto !important;}
+.overlay.open{opacity:1;pointer-events:all;}
+.side-menu{
+  position:fixed;top:0;right:-270px;width:250px;height:100%;
+  background:#0b1a2e;border-left:1px solid #162e4e;
+  z-index:501;transition:right .3s ease;display:flex;flex-direction:column;
+  padding-top:max(20px,env(safe-area-inset-top));
+  touch-action:auto !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch;
+}
+.side-menu *{touch-action:auto !important;}
+.side-menu.open{right:0;}
+.side-menu-hd{padding:14px 18px 16px;border-bottom:1px solid #162e4e;}
+.side-menu-hd h3{font-size:13px;font-weight:800;color:#7ec8ff;letter-spacing:.1em;}
+.menu-items{padding:14px 10px;display:flex;flex-direction:column;gap:5px;}
+.menu-item{background:none;border:none;border-radius:10px;padding:12px 14px;text-align:left;color:#b8d4ef;font-size:14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;font-family:inherit;}
+.menu-item:hover,.menu-item.active{background:#162e4e;color:#ffffff;}
+.menu-item .ico{font-size:17px;width:22px;text-align:center;flex-shrink:0;}
+
+/* スクロール可能コンテンツ */
+.app-content{flex:1;overflow-y:auto !important;-webkit-overflow-scrolling:touch;touch-action:auto !important;overscroll-behavior-y:contain;padding-bottom:max(60px,calc(env(safe-area-inset-bottom)+60px));}
+.app-content *{touch-action:auto !important;}
+
+/* 画面 */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ホーム */
+.home-hero{background:linear-gradient(160deg,#0b1a2e 0%,#091830 60%,#07111f 100%);padding:26px 18px 20px;text-align:center;border-bottom:1px solid #162e4e;}
+.home-hero h2{font-size:19px;font-weight:800;color:#ffffff;margin-bottom:4px;}
+.home-hero .sub{font-size:11px;color:#7ec8ff;letter-spacing:.14em;margin-bottom:16px;}
+
+/* 神経科学解説 */
+.neuro-box{background:linear-gradient(135deg,#0d2244 0%,#091830 100%);border:1px solid #1a4070;border-radius:14px;padding:14px 16px;margin:0 14px 14px;text-align:left;}
+.neuro-label{font-size:10px;letter-spacing:.18em;color:#7ec8ff;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.neuro-label::before{content:'';display:inline-block;width:6px;height:6px;background:#4a9eff;border-radius:50%;flex-shrink:0;}
+.neuro-box p{font-size:13px;line-height:1.85;color:#cde8ff;}
+
+/* 開始ボタン */
+.start-btn{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:16px;background:linear-gradient(135deg,#1457b0,#0d3d8a);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;letter-spacing:.06em;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(20,87,176,.4);transition:all .2s;}
+.start-btn:active{transform:scale(.97);}
+
+/* 尺度カード */
+.scale-cards{padding:0 14px 14px;display:flex;flex-direction:column;gap:9px;}
+.scale-card{background:#0b1a2e;border:1px solid #162e4e;border-radius:12px;padding:13px 15px;display:flex;align-items:center;gap:13px;}
+.scale-card .snum{width:34px;height:34px;background:linear-gradient(135deg,#1457b0,#0d3d8a);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+.scale-card .sinfo h4{font-size:13px;font-weight:800;color:#ffffff;margin-bottom:2px;}
+.scale-card .sinfo p{font-size:11px;color:#7aafc8;line-height:1.4;}
+
+/* 質問画面 */
+.quiz-prog{height:3px;background:#162e4e;flex-shrink:0;}
+.quiz-prog-fill{height:100%;background:linear-gradient(90deg,#1457b0,#4a9eff);transition:width .4s ease;}
+.quiz-hd{padding:16px 18px 12px;border-bottom:1px solid #162e4e;}
+.quiz-scale-tag{font-size:10px;letter-spacing:.18em;color:#7ec8ff;font-weight:700;margin-bottom:3px;}
+.quiz-scale-nm{font-size:16px;font-weight:800;color:#ffffff;margin-bottom:3px;}
+.quiz-cnt{font-size:12px;color:#a0c8e8;font-weight:700;}
+.quiz-qwrap{padding:22px 18px 18px;}
+.quiz-q{font-size:17px;line-height:1.75;color:#ffffff;font-weight:800;margin-bottom:26px;}
+
+/* 評点ボタン */
+.rating-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;}
+.r-btn{aspect-ratio:1;border-radius:11px;border:2px solid #2a4a70;background:#0f2040;color:#7ec8ff;font-size:18px;font-weight:800;cursor:pointer;transition:all .15s;font-family:inherit;display:flex;align-items:center;justify-content:center;}
+.r-btn.sel{background:linear-gradient(135deg,#1457b0,#0d3d8a);border-color:#4a9eff;color:#fff;box-shadow:0 3px 12px rgba(20,87,176,.45);transform:scale(1.07);}
+.r-btn:active{transform:scale(.92);}
+.rating-lbls{display:flex;justify-content:space-between;font-size:11px;color:#7aafc8;font-weight:700;padding:0 2px;margin-bottom:26px;}
+
+/* ナビボタン */
+.quiz-nav{display:flex;gap:10px;padding:0 18px;}
+.nav-btn{flex:1;padding:14px;border-radius:12px;border:2px solid #2a4a70;background:#0f2040;color:#7ec8ff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;}
+.nav-btn.pri{background:linear-gradient(135deg,#1457b0,#0d3d8a);border-color:transparent;color:#fff;box-shadow:0 3px 14px rgba(20,87,176,.35);}
+.nav-btn:active{transform:scale(.96);}
+
+/* エラーメッセージ */
+.err-msg{font-size:13px;color:#ff8fa8;font-weight:800;text-align:center;padding:8px;margin-top:8px;min-height:20px;}
+
+/* 結果画面 */
+.result-hd{padding:22px 18px 14px;text-align:center;border-bottom:1px solid #162e4e;}
+.result-hd h2{font-size:22px;font-weight:800;color:#ffffff;margin-bottom:4px;}
+.result-hd p{font-size:13px;color:#7ec8ff;font-weight:800;letter-spacing:.08em;}
+.result-scores{padding:18px 14px;display:flex;flex-direction:column;gap:11px;}
+.score-row{background:#0b1a2e;border:1px solid #162e4e;border-radius:14px;padding:13px 15px;}
+.score-row-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:8px;}
+.score-nm{font-size:14px;font-weight:800;color:#ffffff;flex:1;}
+.score-val{font-size:17px;font-weight:800;white-space:nowrap;text-align:right;}
+.score-val small{font-size:11px;color:#4a6a8a;font-weight:400;}
+.bar-bg{height:6px;background:#162e4e;border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .9s ease;}
+.score-interp{font-size:12px;color:#a0c8e8;font-weight:700;line-height:1.6;}
+.score-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle;}
+
+.col-low{color:#f48fb1;} .bar-low{background:linear-gradient(90deg,#c62828,#f48fb1);}
+.col-mid{color:#fff176;} .bar-mid{background:linear-gradient(90deg,#f9a825,#fff176);}
+.col-high{color:#80cbc4;} .bar-high{background:linear-gradient(90deg,#00796b,#80cbc4);}
+.col-vhigh{color:#4a9eff;} .bar-vhigh{background:linear-gradient(90deg,#1457b0,#4a9eff);}
+.badge-low{background:#c62828;color:#fff;}
+.badge-mid{background:#f9a825;color:#07111f;}
+.badge-high{background:#00796b;color:#fff;}
+.badge-vhigh{background:#1457b0;color:#fff;}
+
+/* サマリー */
+.summary-box{margin:0 14px 14px;background:linear-gradient(135deg,#0d2244,#091830);border:1px solid #1a4070;border-radius:14px;padding:16px;}
+.summary-box h3{font-size:14px;font-weight:800;color:#7ec8ff;letter-spacing:.08em;margin-bottom:10px;}
+.summary-box p{font-size:13px;line-height:1.85;color:#cde8ff;font-weight:700;}
+.key-scores{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.key-score-item{display:flex;justify-content:space-between;align-items:center;background:#0b1a2e;border-radius:9px;padding:8px 12px;}
+.key-score-item span{font-size:13px;color:#c0dff5;font-weight:800;}
+.key-score-item strong{font-size:14px;font-weight:800;}
+
+.retry-btn{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:15px;background:linear-gradient(135deg,#1457b0,#0d3d8a);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:800;letter-spacing:.06em;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(20,87,176,.4);transition:all .2s;}
+.retry-btn:active{transform:scale(.97);}
+
+/* 情報パネル */
+.info-panel{padding:14px;touch-action:auto !important;}
+.info-panel *{touch-action:auto !important;}
+.info-section{background:#0b1a2e;border:1px solid #162e4e;border-radius:14px;padding:15px 16px;margin-bottom:11px;}
+.info-section h3{font-size:14px;font-weight:800;color:#7ec8ff;letter-spacing:.08em;margin-bottom:10px;}
+.info-section p{font-size:13px;line-height:1.85;color:#cde8ff;font-weight:700;}
+.info-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.info-table th{background:#162e4e;color:#7ec8ff;padding:8px 10px;text-align:left;font-size:11px;letter-spacing:.1em;font-weight:800;}
+.info-table td{padding:9px 10px;border-bottom:1px solid #1e3a5f;color:#cde8ff;font-weight:700;}
+.info-table tr:last-child td{border-bottom:none;}
+
+/* フッター */
+.app-footer{flex-shrink:0;background:#07111f;border-top:1px solid #162e4e;padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));text-align:center;font-size:11px;color:#7a9abf;font-weight:700;letter-spacing:.06em;}
+</style>
+</head>
+<body>
+
+<!-- スプラッシュ画面 -->
+<div id="splash">
+  <img src="FNT512.png" alt="FNTロゴ" onerror="this.style.display='none'">
+  <div class="sp-brand">Functional Neuro Training</div>
+  <div class="sp-title">MAIA<br>内受容覚アセスメント</div>
+  <div class="sp-copy">© Functional Neuro Training. All rights reserved.</div>
+</div>
+
+<!-- アプリ本体 -->
+<div id="app">
+
+  <!-- ヘッダー -->
+  <header class="app-header">
+    <div class="header-left">
+      <img src="FNT512-transparent.png" alt="FNTロゴ" class="header-logo" onerror="this.style.display='none'">
+      <div class="header-titles">
+        <h1>MAIA 内受容覚評価</h1>
+        <span>Functional Neuro Training</span>
+      </div>
+    </div>
+    <button class="menu-btn" id="menuBtn" aria-label="メニュー">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- オーバーレイ & サイドメニュー -->
+  <div class="overlay" id="overlay"></div>
+  <nav class="side-menu" id="sideMenu">
+    <div class="side-menu-hd"><h3>メニュー</h3></div>
+    <div class="menu-items">
+      <button class="menu-item" id="mn-home"><span class="ico">🏠</span>ホーム</button>
+      <button class="menu-item" id="mn-quiz"><span class="ico">📋</span>評価を開始</button>
+      <button class="menu-item" id="mn-info"><span class="ico">🧠</span>MAIAについて</button>
+      <button class="menu-item" id="mn-insula"><span class="ico">🔬</span>神経科学的背景</button>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <main class="app-content">
+
+    <!-- ホーム画面 -->
+    <section class="screen active" id="screen-home">
+      <div class="home-hero">
+        <h2>内受容覚の多次元評価</h2>
+        <div class="sub">Multidimensional Assessment of Interoceptive Awareness</div>
+      </div>
+      <div class="neuro-box" style="margin-top:16px;">
+        <div class="neuro-label">神経科学的背景</div>
+        <p>内受容覚とは、心拍・呼吸・内臓感覚など<strong style="color:#cde8ff">身体の内部から来る信号を感じ取る能力</strong>です。処理の中心は<strong style="color:#cde8ff">島皮質（insula）</strong>で、後部→前部の流れで「身体信号 → 主観的感覚」へと変換されます。MAIAスコアが高いほど前部島皮質の活動が強く、感情認識・自己調整能力との相関が示されています。</p>
+      </div>
+      <button class="start-btn" id="startBtn">評価を開始する →</button>
+      <div class="scale-cards">
+        <div style="font-size:11px;color:#4a6a8a;letter-spacing:.1em;padding:0 2px 8px;font-weight:700;">8つの評価尺度</div>
+        <div class="scale-card"><div class="snum">1</div><div class="sinfo"><h4>気づき（Noticing）</h4><p>身体感覚への気づく能力</p></div></div>
+        <div class="scale-card"><div class="snum">2</div><div class="sinfo"><h4>注意転換しない（Not-Distracting）</h4><p>不快な感覚を無視しない傾向</p></div></div>
+        <div class="scale-card"><div class="snum">3</div><div class="sinfo"><h4>過剰反応しない（Not-Worrying）</h4><p>身体感覚への不安の少なさ</p></div></div>
+        <div class="scale-card"><div class="snum">4</div><div class="sinfo"><h4>注意制御（Attention Regulation）</h4><p>身体への意識的注意を向ける能力</p></div></div>
+        <div class="scale-card"><div class="snum">5</div><div class="sinfo"><h4>感情認識（Emotional Awareness）</h4><p>身体感覚と感情のつながり</p></div></div>
+        <div class="scale-card"><div class="snum">6</div><div class="sinfo"><h4>自己調整（Self-Regulation）</h4><p>身体感覚を使って状態を調整する能力</p></div></div>
+        <div class="scale-card"><div class="snum">7</div><div class="sinfo"><h4>身体の声を聞く（Body Listening）</h4><p>身体からのメッセージを感じ取る</p></div></div>
+        <div class="scale-card"><div class="snum">8</div><div class="sinfo"><h4>身体への信頼（Trusting）</h4><p>身体感覚への信頼と安心感</p></div></div>
+      </div>
+    </section>
+
+    <!-- 質問画面 -->
+    <section class="screen" id="screen-quiz">
+      <div class="quiz-prog"><div class="quiz-prog-fill" id="progFill" style="width:0%"></div></div>
+      <div class="quiz-hd">
+        <div class="quiz-scale-tag" id="qScaleTag"></div>
+        <div class="quiz-scale-nm" id="qScaleNm"></div>
+        <div class="quiz-cnt" id="qCnt"></div>
+      </div>
+      <div class="quiz-qwrap">
+        <div class="quiz-q" id="qText"></div>
+        <div class="rating-grid" id="ratingGrid">
+          <button class="r-btn" data-v="0">0</button>
+          <button class="r-btn" data-v="1">1</button>
+          <button class="r-btn" data-v="2">2</button>
+          <button class="r-btn" data-v="3">3</button>
+          <button class="r-btn" data-v="4">4</button>
+          <button class="r-btn" data-v="5">5</button>
+        </div>
+        <div class="rating-lbls">
+          <span>全く当てはまらない</span>
+          <span>非常によく当てはまる</span>
+        </div>
+        <div class="err-msg" id="errMsg"></div>
+        <div class="quiz-nav">
+          <button class="nav-btn" id="prevBtn">← 前へ</button>
+          <button class="nav-btn pri" id="nextBtn">次へ →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 結果画面 -->
+    <section class="screen" id="screen-result">
+      <div class="result-hd">
+        <h2>評価結果</h2>
+        <p>MAIA 内受容覚スコア</p>
+      </div>
+      <div class="result-scores" id="resultScores"></div>
+      <div class="summary-box" id="summaryBox"></div>
+      <button class="retry-btn" id="retryBtn">もう一度評価する</button>
+    </section>
+
+    <!-- MAIAについて -->
+    <section class="screen" id="screen-info">
+      <div class="info-panel">
+        <div class="info-section">
+          <h3>MAIAとは</h3>
+          <p>MAIA（Multidimensional Assessment of Interoceptive Awareness）は、内受容覚を8つの側面から評価する自己評価尺度です。各項目を0〜5点で回答し、尺度ごとの平均点を算出します。</p>
+        </div>
+        <div class="info-section">
+          <h3>健常成人の平均値の目安</h3>
+          <table class="info-table">
+            <tr><th>尺度</th><th>一般平均</th><th>瞑想経験者</th></tr>
+            <tr><td>気づき</td><td>2.5〜3.2</td><td>—</td></tr>
+            <tr><td>注意転換しない</td><td>2.3〜3.0</td><td>—</td></tr>
+            <tr><td>過剰反応しない</td><td>2.8〜3.5</td><td>—</td></tr>
+            <tr><td>注意制御</td><td>2.4〜3.2</td><td>3.5〜4.2</td></tr>
+            <tr><td>感情認識</td><td>3.0〜3.8</td><td>—</td></tr>
+            <tr><td>自己調整</td><td>2.4〜3.3</td><td>3.2〜4.0</td></tr>
+            <tr><td>身体の声を聞く</td><td>2.3〜3.1</td><td>3.3〜4.0</td></tr>
+            <tr><td>身体への信頼</td><td>2.7〜3.6</td><td>—</td></tr>
+          </table>
+        </div>
+        <div class="info-section">
+          <h3>スコアの目安</h3>
+          <table class="info-table">
+            <tr><th>スコア</th><th>解釈</th></tr>
+            <tr><td>1.5以下</td><td>内受容覚が低い</td></tr>
+            <tr><td>2.0〜3.0</td><td>一般的な範囲</td></tr>
+            <tr><td>3.0〜4.0</td><td>高い</td></tr>
+            <tr><td>4.0以上</td><td>非常に高い</td></tr>
+          </table>
+        </div>
+        <div class="info-section">
+          <h3>注意点</h3>
+          <p>MAIAは「高いほど良い」という単純な尺度ではありません。例えば「気づき」が高すぎると身体過敏・不安につながる場合があります。尺度ごとに意味が異なるため、バランスが大切です。臨床的なカットオフ値は存在せず、主に研究の群比較で使用されます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 神経科学的背景 -->
+    <section class="screen" id="screen-insula">
+      <div class="info-panel">
+        <div class="info-section">
+          <h3>島皮質（Insula）との関係</h3>
+          <p>島皮質は心拍・呼吸・内臓感覚などの身体内部信号を処理する皮質で、内受容覚ネットワークの中心です。MAIAスコアが高い人ほど前部島皮質の活動が強い傾向があります。</p>
+        </div>
+        <div class="info-section">
+          <h3>島皮質の機能分化</h3>
+          <table class="info-table">
+            <tr><th>部位</th><th>機能</th></tr>
+            <tr><td>後部島皮質</td><td>身体信号の受容</td></tr>
+            <tr><td>中部島皮質</td><td>内受容への注意</td></tr>
+            <tr><td>前部島皮質</td><td>身体感覚の意識化</td></tr>
+          </table>
+        </div>
+        <div class="info-section">
+          <h3>変換の流れ</h3>
+          <p>後部島皮質 → 前部島皮質 → 主観的感覚、という流れで「身体信号 → 自己感覚」へと変換されます。前部島皮質は内受容意識・不安・感情と強く関係しています。</p>
+        </div>
+        <div class="info-section">
+          <h3>精神健康との関連</h3>
+          <p>研究では、瞑想・ヨガ・マインドフルネスを継続する人はMAIAスコアが高く、島皮質活動も強い傾向が報告されています。不安・慢性痛群では「過剰反応しない」「身体への信頼」「自己調整」の低下が見られます。</p>
+        </div>
+        <div class="info-section">
+          <h3>精神健康と特に強い関連がある4尺度</h3>
+          <p>
+            ① 注意制御（Attention Regulation）<br>
+            ② 自己調整（Self-Regulation）<br>
+            ③ 過剰反応しない（Not-Worrying）<br>
+            ④ 身体への信頼（Trusting）
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- フッター -->
+  <footer class="app-footer">
+    © Functional Neuro Training. All rights reserved.
+  </footer>
+</div>
+
+<script>
+// ===== 質問データ =====
+const SCALES = [
+  {
+    id:'noticing', name:'気づき', nameEN:'Noticing',
+    desc:'身体感覚への気づく能力',
+    questions:[
+      '自分の心拍の変化に気づく',
+      '呼吸の変化に気づく',
+      '体温の変化に気づく',
+      '身体の緊張やリラックスに気づく',
+    ],
+    normLow:2.5, normHigh:3.2,
+    note:'気づきが高すぎると身体過敏・不安につながる場合があります。'
+  },
+  {
+    id:'notdist', name:'注意転換しない', nameEN:'Not-Distracting',
+    desc:'不快な感覚を無視しない傾向',
+    questions:[
+      '痛みや不快感を感じたとき、注意を向ける',
+      '身体の違和感を感じても無視しない',
+      '身体の感覚を感じないようにしない',
+    ],
+    normLow:2.3, normHigh:3.0,
+    note:'低い場合は不快な感覚を回避する傾向があります。'
+  },
+  {
+    id:'notworry', name:'過剰反応しない', nameEN:'Not-Worrying',
+    desc:'身体感覚への不安の少なさ',
+    questions:[
+      '身体の違和感を感じても不安になりすぎない',
+      '心拍が速くなってもパニックにならない',
+      '身体の症状を過度に心配しない',
+    ],
+    normLow:2.8, normHigh:3.5,
+    note:'不安・慢性痛群では低いことが多い重要尺度です。'
+  },
+  {
+    id:'attreg', name:'注意制御', nameEN:'Attention Regulation',
+    desc:'身体への意識的注意を向ける能力',
+    questions:[
+      '意識的に呼吸に注意を向けられる',
+      '身体の感覚に集中できる',
+      '身体感覚に長く注意を向けられる',
+      '気が散っても身体感覚に注意を戻せる',
+    ],
+    normLow:2.4, normHigh:3.2,
+    note:'精神健康との相関が最も強い尺度です。瞑想経験者は3.5〜4.2が多いです。'
+  },
+  {
+    id:'emoaware', name:'感情認識', nameEN:'Emotional Awareness',
+    desc:'身体感覚と感情のつながり',
+    questions:[
+      '感情が身体感覚として現れるのが分かる',
+      '不安のとき身体がどう変わるか分かる',
+      '感情が呼吸に影響するのが分かる',
+      '感情を身体感覚として感じ取れる',
+    ],
+    normLow:3.0, normHigh:3.8,
+    note:'前部島皮質の活動と強く関連します。'
+  },
+  {
+    id:'selfreg', name:'自己調整', nameEN:'Self-Regulation',
+    desc:'身体感覚を使って状態を調整する能力',
+    questions:[
+      '呼吸を意識して落ち着ける',
+      '身体の感覚に注意するとリラックスできる',
+      '身体の感覚を使ってストレスを減らせる',
+    ],
+    normLow:2.4, normHigh:3.3,
+    note:'瞑想・ヨガ経験者では3.2〜4.0と高い傾向があります。'
+  },
+  {
+    id:'bodylisten', name:'身体の声を聞く', nameEN:'Body Listening',
+    desc:'身体からのメッセージを感じ取る',
+    questions:[
+      '身体が必要としていることを感じ取れる',
+      '疲れのサインに気づく',
+      '身体の声を聞くことが大切だと思う',
+    ],
+    normLow:2.3, normHigh:3.1,
+    note:'身体からのシグナルへの感受性を示します。'
+  },
+  {
+    id:'trusting', name:'身体への信頼', nameEN:'Trusting',
+    desc:'身体感覚への信頼と安心感',
+    questions:[
+      '自分の身体を信頼している',
+      '身体は自分にとって安全な場所だと感じる',
+      '身体の感覚は役に立つと感じる',
+    ],
+    normLow:2.7, normHigh:3.6,
+    note:'不安・慢性痛群では低いことが多い重要尺度です。'
+  }
+];
+
+// 全質問をフラット配列に
+const QUESTIONS = [];
+SCALES.forEach((sc,si)=>{
+  sc.questions.forEach((q)=>{
+    QUESTIONS.push({scaleIdx:si, text:q});
+  });
+});
+const TOTAL = QUESTIONS.length;
+
+// ===== 状態 =====
+let answers = new Array(TOTAL).fill(null);
+let currentQ = 0;
+
+// ===== DOM =====
+const splash    = document.getElementById('splash');
+const app       = document.getElementById('app');
+const overlay   = document.getElementById('overlay');
+const sideMenu  = document.getElementById('sideMenu');
+const menuBtn   = document.getElementById('menuBtn');
+const progFill  = document.getElementById('progFill');
+const qScaleTag = document.getElementById('qScaleTag');
+const qScaleNm  = document.getElementById('qScaleNm');
+const qCnt      = document.getElementById('qCnt');
+const qText     = document.getElementById('qText');
+const ratingGrid= document.getElementById('ratingGrid');
+const prevBtn   = document.getElementById('prevBtn');
+const nextBtn   = document.getElementById('nextBtn');
+const errMsg    = document.getElementById('errMsg');
+const resultScores = document.getElementById('resultScores');
+const summaryBox= document.getElementById('summaryBox');
+
+// ===== スプラッシュ =====
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    splash.classList.add('fade-out');
+    app.classList.add('visible');
+    setTimeout(()=>{ splash.style.display='none'; },700);
+  }, 1800);
+});
+
+// ===== メニュー制御 =====
+function openMenu(){ overlay.classList.add('open'); sideMenu.classList.add('open'); }
+function closeMenu(){ overlay.classList.remove('open'); sideMenu.classList.remove('open'); }
+menuBtn.addEventListener('click', openMenu);
+overlay.addEventListener('click', closeMenu);
+
+// ===== 画面切替 =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelector('.app-content').scrollTop = 0;
+}
+
+document.getElementById('mn-home').addEventListener('click',()=>{ showScreen('home'); closeMenu(); });
+document.getElementById('mn-quiz').addEventListener('click',()=>{ startQuiz(); closeMenu(); });
+document.getElementById('mn-info').addEventListener('click',()=>{ showScreen('info'); closeMenu(); });
+document.getElementById('mn-insula').addEventListener('click',()=>{ showScreen('insula'); closeMenu(); });
+document.getElementById('startBtn').addEventListener('click', startQuiz);
+document.getElementById('retryBtn').addEventListener('click', startQuiz);
+
+// ===== クイズ開始 =====
+function startQuiz(){
+  answers = new Array(TOTAL).fill(null);
+  currentQ = 0;
+  renderQuestion();
+  showScreen('quiz');
+}
+
+// ===== 質問描画 =====
+function renderQuestion(){
+  const q = QUESTIONS[currentQ];
+  const scale = SCALES[q.scaleIdx];
+  const pct = (currentQ / TOTAL) * 100;
+  progFill.style.width = pct + '%';
+  qScaleTag.textContent = '尺度 ' + (q.scaleIdx+1) + ' ／ 8';
+  qScaleNm.textContent = scale.name + '（' + scale.nameEN + '）';
+  qCnt.textContent = '質問 ' + (currentQ+1) + ' ／ ' + TOTAL;
+  qText.textContent = q.text;
+  errMsg.textContent = '';
+
+  // 評点ボタン更新
+  ratingGrid.querySelectorAll('.r-btn').forEach(btn=>{
+    const v = parseInt(btn.getAttribute('data-v'));
+    btn.classList.toggle('sel', answers[currentQ] === v);
+  });
+
+  prevBtn.style.display = currentQ === 0 ? 'none' : '';
+  nextBtn.textContent = currentQ === TOTAL - 1 ? '結果を見る ✓' : '次へ →';
+}
+
+// ===== 評点選択 =====
+ratingGrid.addEventListener('click', e=>{
+  const btn = e.target.closest('.r-btn');
+  if(!btn) return;
+  answers[currentQ] = parseInt(btn.getAttribute('data-v'));
+  renderQuestion();
+});
+
+// ===== 次へ =====
+nextBtn.addEventListener('click',()=>{
+  if(answers[currentQ] === null){
+    errMsg.textContent = '※ まず評点（0〜5）を選んでください。';
+    return;
+  }
+  if(currentQ < TOTAL - 1){
+    currentQ++;
+    renderQuestion();
+    document.querySelector('.app-content').scrollTop = 0;
+  } else {
+    showResult();
+  }
+});
+
+// ===== 前へ =====
+prevBtn.addEventListener('click',()=>{
+  if(currentQ > 0){ currentQ--; renderQuestion(); document.querySelector('.app-content').scrollTop = 0; }
+});
+
+// ===== スコア計算 =====
+function calcScores(){
+  const scores = {};
+  SCALES.forEach((sc,si)=>{
+    const vals = QUESTIONS
+      .map((q,i)=>q.scaleIdx===si ? answers[i] : null)
+      .filter(v=>v!==null);
+    scores[sc.id] = vals.length > 0 ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  });
+  return scores;
+}
+
+// ===== 解釈 =====
+function interpret(val){
+  if(val <= 1.5) return {label:'低い', cls:'low', badge:'badge-low'};
+  if(val <= 3.0) return {label:'一般的', cls:'mid', badge:'badge-mid'};
+  if(val <= 4.0) return {label:'高い', cls:'high', badge:'badge-high'};
+  return {label:'非常に高い', cls:'vhigh', badge:'badge-vhigh'};
+}
+
+// ===== 結果表示 =====
+function showResult(){
+  const scores = calcScores();
+  progFill.style.width = '100%';
+
+  let html = '';
+  SCALES.forEach(sc=>{
+    const val = scores[sc.id];
+    const it = interpret(val);
+    const pct = (val/5)*100;
+    html += `
+    <div class="score-row">
+      <div class="score-row-top">
+        <div class="score-nm">${sc.name}<br><small style="font-size:10px;color:#4a6a8a;">${sc.nameEN}</small></div>
+        <div class="score-val col-${it.cls}">${val.toFixed(2)}<small>／5</small>
+          <span class="score-badge ${it.badge}">${it.label}</span>
+        </div>
+      </div>
+      <div class="bar-bg"><div class="bar-fill bar-${it.cls}" style="width:${pct}%"></div></div>
+      <div class="score-interp">目安：${sc.normLow}〜${sc.normHigh}（一般成人平均）<br>${sc.note}</div>
+    </div>`;
+  });
+  resultScores.innerHTML = html;
+
+  // 総合サマリー
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  const avg = total / SCALES.length;
+  const avgIt = interpret(avg);
+  const keyList = [
+    {id:'attreg',  name:'注意制御'},
+    {id:'selfreg', name:'自己調整'},
+    {id:'notworry',name:'過剰反応しない'},
+    {id:'trusting',name:'身体への信頼'},
+  ];
+  let keyHtml = '';
+  keyList.forEach(k=>{
+    const v = scores[k.id];
+    const it = interpret(v);
+    keyHtml += `<div class="key-score-item"><span>${k.name}</span><strong class="col-${it.cls}">${v.toFixed(2)}</strong></div>`;
+  });
+  summaryBox.innerHTML = `
+    <h3>総合サマリー</h3>
+    <p>全尺度の平均スコアは <strong style="color:#4a9eff;font-size:16px;">${avg.toFixed(2)}</strong> ／5.0 で<strong class="col-${avgIt.cls}">（${avgIt.label}）</strong>の範囲です。</p>
+    <p style="margin-top:8px;">精神健康との相関が強い4尺度：</p>
+    <div class="key-scores">${keyHtml}</div>
+  `;
+  showScreen('result');
+}
+
+// ===== PWA登録 =====
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+
+// ===== 横スクロール防止 =====
+document.addEventListener('touchmove', e=>{
+  if(e.touches && e.touches.length > 1) e.preventDefault();
+},{passive:false});
+</script>
+</body>
+</html>
